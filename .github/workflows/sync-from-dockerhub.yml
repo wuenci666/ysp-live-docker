@@ -2,8 +2,9 @@ name: sync-from-dockerhub
 
 # 目标：每次更新 Docker Hub，把镜像（全部 tag）自动镜像到 GitHub(ghcr) 与 CNB。
 # 触发：
-#   1) 手动：Actions → sync-from-dockerhub → Run workflow
-#   2) 自动：Docker Hub webhook → repository_dispatch（见 SYNC.md）
+#   1) 定时：每小时自动检测并同步一次（cron '17 * * * *'）
+#   2) 手动：Actions → sync-from-dockerhub → Run workflow
+#   3) 即时：Docker Hub webhook → repository_dispatch（见 SYNC.md）
 on:
   # 1) 定时兜底：每小时自动检测并同步一次（无需任何外部配置）
   schedule:
