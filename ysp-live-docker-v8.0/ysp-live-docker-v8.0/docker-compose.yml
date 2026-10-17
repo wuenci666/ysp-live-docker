@@ -1,0 +1,20 @@
+# ysp-live v8.0 — 单端口版，端口已固定：宿主 8767
+# 订阅路径为 /all.m3u，64 路频道（含卫视频道），镜像最小仅 83MB
+name: ysp-live-v80
+
+services:
+  ysp-live:
+    image: ysp-live:v8.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ysp-live-v8.0
+    restart: unless-stopped
+    ports:
+      - "8767:8767"   # 主服务：首页 / all.m3u / 64 路直播
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - YSP_DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data   # 设备身份持久化，重建容器不丢认证

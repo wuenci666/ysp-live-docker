@@ -1,0 +1,19 @@
+name: ysp-live-v74g
+
+services:
+  ysp-live:
+    image: ysp-live:v7.4-G
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ysp-live-v7.4-G
+    restart: unless-stopped
+    ports:
+      - "8767:8767"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+    # Linux / 群晖 / 软路由 NAS 推荐启用 host 模式（取消下一行注释并注释掉上方 ports）以获得极致 4K 吞吐：
+    # network_mode: host

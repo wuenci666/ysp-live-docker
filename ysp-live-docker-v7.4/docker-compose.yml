@@ -1,0 +1,20 @@
+# ysp-live v7.4 — 单端口版，端口已固定：宿主 8767
+# 订阅路径为 /cctv.m3u（不是 /all.m3u），30 路频道，无卫视频道
+name: ysp-live-v74
+
+services:
+  ysp-live:
+    image: ysp-live:v7.4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ysp-live-v7.4
+    restart: unless-stopped
+    ports:
+      - "8767:8767"   # 主服务：首页 / cctv.m3u / 30 路直播
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - YSP_DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data   # 设备身份持久化，重建容器不丢认证

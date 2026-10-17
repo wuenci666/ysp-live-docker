@@ -1,0 +1,20 @@
+# ysp-live v3.0 — 端口已固定：宿主 8767（主服务）+ 8766（4K 设备协议后端）
+name: ysp-live-v30
+
+services:
+  ysp-live:
+    image: ysp-live:v3.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ysp-live-v3.0
+    restart: unless-stopped
+    ports:
+      - "8767:8767"   # 主服务：首页 / all.m3u / 63 路直播
+      - "8766:8766"   # 4K 后端：5 路设备协议频道（局域网看真 4K 必须映射）
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - YSP_PORT=8767
+    volumes:
+      - ./data:/data   # 持久化 4K 设备注册信息，重建容器不用重新注册

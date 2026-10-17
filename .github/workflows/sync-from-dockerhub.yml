@@ -1,0 +1,75 @@
+name: sync-from-dockerhub
+
+# 你的核心诉求：在 Docker Hub 更新一次，自动镜像到 GitHub(ghcr) 与 CNB。
+# 触发：
+#   1) 手动：Actions → sync-from-dockerhub → Run workflow（可填 tag，默认 latest）
+#   2) 自动：Docker Hub webhook → repository_dispatch（见 SYNC.md 第三节方式二）
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要同步的镜像标签（默认 latest；填版本标签会额外同步 latest）'
+        required: false
+        default: 'latest'
+  repository_dispatch:
+    types: [dockerhub-sync]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  SRC:  wuenci514/ysp-live
+  GHCR: ghcr.io/wuenci666/ysp-live
+  CNB:  docker.cnb.cool/wuenciteam/ysp-live-docker
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login Docker Hub (避免 GitHub runner 拉取限流)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login CNB Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cnb.cool
+          username: cnb
+          password: ${{ secrets.CNB_TOKEN }}
+
+      - name: 解析要同步的标签
+        id: cfg
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          [ -z "$TAG" ] && TAG="latest"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if [ "$TAG" != "latest" ]; then echo "extra=latest" >> "$GITHUB_OUTPUT"; else echo "extra=" >> "$GITHUB_OUTPUT"; fi
+
+      - name: 从 Docker Hub 拉取并镜像 ${{ steps.cfg.outputs.tag }}
+        run: |
+          set -e
+          TAG="${{ steps.cfg.outputs.tag }}"
+          docker pull "$SRC:$TAG"
+          docker tag  "$SRC:$TAG" "$GHCR:$TAG";  docker push "$GHCR:$TAG"
+          docker tag  "$SRC:$TAG" "$CNB:$TAG";   docker push "$CNB:$TAG"
+          echo "✅ 已同步 $TAG → ghcr + cnb"
+
+      - name: 额外同步 latest
+        if: ${{ steps.cfg.outputs.extra != '' }}
+        run: |
+          set -e
+          TAG="${{ steps.cfg.outputs.extra }}"
+          docker pull "$SRC:$TAG"
+          docker tag  "$SRC:$TAG" "$GHCR:$TAG";  docker push "$GHCR:$TAG"
+          docker tag  "$SRC:$TAG" "$CNB:$TAG";   docker push "$CNB:$TAG"
+          echo "✅ 已同步 $TAG → ghcr + cnb"

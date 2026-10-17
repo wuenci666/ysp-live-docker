@@ -1,0 +1,32 @@
+#!name=央视频直连分流
+#!desc=解决央视频4K/8K直播及高码率因走代理导致403的问题
+#!author=Gary's Club
+#!homepage=https://t.me/garysclub
+#!date=2026-10-11
+
+[Rule]
+# 央视 / 央视频核心域名
+DOMAIN-SUFFIX,cctv.cn,DIRECT
+DOMAIN-SUFFIX,cctv.com,DIRECT
+DOMAIN-SUFFIX,yangshipin.cn,DIRECT
+DOMAIN-SUFFIX,cntv.cn,DIRECT
+DOMAIN-SUFFIX,cntv.com,DIRECT
+
+# 央视频底层流媒体与CDN (腾讯云 / 阿里CDN)
+DOMAIN-SUFFIX,qqlive.com,DIRECT
+DOMAIN-SUFFIX,myqcloud.com,DIRECT
+DOMAIN-SUFFIX,gtimg.cn,DIRECT
+DOMAIN-SUFFIX,alicdn.com,DIRECT
+DOMAIN-SUFFIX,alikunlun.com,DIRECT
+
+# CDN 节点关键字兜底
+DOMAIN-KEYWORD,liveali,DIRECT
+DOMAIN-KEYWORD,liveten,DIRECT
+DOMAIN-KEYWORD,bklive,DIRECT
+
+# 本地与局域网直连 (防止 TUN 模式误拦截本地代理)
+DOMAIN-SUFFIX,local,DIRECT
+IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+IP-CIDR,172.16.0.0/12,DIRECT,no-resolve

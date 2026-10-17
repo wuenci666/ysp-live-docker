@@ -1,0 +1,21 @@
+# 央视 / 央视频直连规则集 (适用于 Surge / Loon / Shadowrocket Rule-Set)
+# 官方发布社区: https://t.me/garysclub
+
+DOMAIN-SUFFIX,cctv.cn
+DOMAIN-SUFFIX,cctv.com
+DOMAIN-SUFFIX,yangshipin.cn
+DOMAIN-SUFFIX,cntv.cn
+DOMAIN-SUFFIX,cntv.com
+DOMAIN-SUFFIX,qqlive.com
+DOMAIN-SUFFIX,myqcloud.com
+DOMAIN-SUFFIX,gtimg.cn
+DOMAIN-SUFFIX,alicdn.com
+DOMAIN-SUFFIX,alikunlun.com
+DOMAIN-KEYWORD,liveali
+DOMAIN-KEYWORD,liveten
+DOMAIN-KEYWORD,bklive
+DOMAIN-SUFFIX,local
+IP-CIDR,127.0.0.0/8,no-resolve
+IP-CIDR,192.168.0.0/16,no-resolve
+IP-CIDR,10.0.0.0/8,no-resolve
+IP-CIDR,172.16.0.0/12,no-resolve
