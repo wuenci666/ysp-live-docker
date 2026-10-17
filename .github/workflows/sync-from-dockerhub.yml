@@ -2,16 +2,18 @@ name: sync-from-dockerhub
 
 # 目标：每次更新 Docker Hub，把镜像（全部 tag）自动镜像到 GitHub(ghcr) 与 CNB。
 # 触发：
-#   1) 定时：每小时自动检测并同步一次（cron '17 * * * *'）
-#   2) 手动：Actions → sync-from-dockerhub → Run workflow
+#   1) 定时：每小时自动检测一次（cron '17 * * * *'）；无变化时直接跳过
+#   2) 手动：Actions → sync-from-dockerhub → Run workflow（可勾选 force 强制同步）
 #   3) 即时：Docker Hub webhook → repository_dispatch（见 SYNC.md）
 on:
-  # 1) 定时兜底：每小时自动检测并同步一次（无需任何外部配置）
   schedule:
     - cron: '17 * * * *'
-  # 2) 手动：Actions → sync-from-dockerhub → Run workflow
   workflow_dispatch:
-  # 3) 全自动即时：Docker Hub webhook → Cloudflare Worker → repository_dispatch
+    inputs:
+      force:
+        description: '强制同步（忽略「无变化」跳过逻辑）'
+        type: boolean
+        default: false
   repository_dispatch:
     types: [dockerhub-sync]
 
@@ -25,8 +27,51 @@ env:
   CNB:  docker.cnb.cool/wuenciteam/ysp-live-docker
 
 jobs:
+  # 第 0 阶段：只调用 Docker Hub 的 Web API 生成「标签→digest」指纹，
+  # 与上一次运行缓存的指纹比对。一致则跳过后续所有拉取/推送（零镜像流量）。
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.decide.outputs.changed }}
+      hash: ${{ steps.sig.outputs.hash }}
+    steps:
+      - name: 生成 Docker Hub 全标签指纹（只读 API，不拉取镜像）
+        id: sig
+        run: |
+          set -e
+          SIG=$(curl -fsSL "https://hub.docker.com/v2/repositories/${SRC}/tags?page_size=100" \
+            | jq -r '.results | sort_by(.name) | map(.name + "=" + (.digest // "none")) | join("\n")')
+          HASH=$(printf '%s\n' "$SIG" | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$SIG" > state.txt
+          echo "指纹 HASH: $HASH"
+          echo "----- 当前标签指纹 -----"
+          echo "$SIG"
+
+      - name: 与上次运行比对（命中缓存 = 无变化）
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: state.txt
+          key: sync-state-${{ steps.sig.outputs.hash }}
+
+      - name: 判定是否需要同步
+        id: decide
+        run: |
+          FORCE="${{ github.event.inputs.force }}"
+          HIT="${{ steps.restore.outputs.cache-hit }}"
+          if [ "$HIT" = "true" ] && [ "$FORCE" != "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Docker Hub 与上次指纹一致，本次跳过同步（未拉取/推送任何镜像）"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "🔄 检测到变化（或强制同步），继续执行同步"
+          fi
+
   # 第一阶段：从 Docker Hub 拉全部标签，推送到 ghcr（GITHUB_TOKEN 自带 packages:write）
   sync-ghcr:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Login Docker Hub (避免 GitHub runner 拉取限流；缺 token 时回退匿名拉取)
@@ -64,7 +109,8 @@ jobs:
 
   # 第二阶段：把相同标签推送到 cnb（需要 CNB_TOKEN secret）
   sync-cnb:
-    needs: sync-ghcr
+    needs: [check, sync-ghcr]
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Login Docker Hub
@@ -97,3 +143,25 @@ jobs:
           echo "==> [v9.5-G] re-push last so CNB banner shows v9.5-G"
           docker pull "$SRC:v9.5-G" && docker tag "$SRC:v9.5-G" "$CNB:v9.5-G" && docker push "$CNB:v9.5-G"
           echo "✅ cnb 镜像完成"
+
+  # 第三阶段：仅当两个同步 job 都成功时，才把本次指纹写入缓存供下次比对。
+  # 若同步失败则不写入，下个整点会重新检测到变化并重试。
+  finalize:
+    needs: [check, sync-ghcr, sync-cnb]
+    if: needs.check.outputs.changed == 'true' && needs.sync-ghcr.result == 'success' && needs.sync-cnb.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 重新生成指纹
+        run: |
+          set -e
+          SIG=$(curl -fsSL "https://hub.docker.com/v2/repositories/${SRC}/tags?page_size=100" \
+            | jq -r '.results | sort_by(.name) | map(.name + "=" + (.digest // "none")) | join("\n")')
+          printf '%s\n' "$SIG" > state.txt
+          echo "----- 写入缓存的指纹 -----"
+          echo "$SIG"
+
+      - name: 保存指纹（供下次运行比对）
+        uses: actions/cache/save@v4
+        with:
+          path: state.txt
+          key: sync-state-${{ needs.check.outputs.hash }}
