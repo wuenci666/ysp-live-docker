@@ -19,12 +19,22 @@
 3. **即时自动（可选）**：Docker Hub webhook → GitHub `repository_dispatch`，推送后几分钟内触发，需部署 Cloudflare Worker（见下文）
 
 工作流做的事情：
-1. 登录 ghcr（用 `GITHUB_TOKEN`，自带 `packages:write`）
-2. 登录 cnb（用 `CNB_TOKEN`）
-3. 从 Docker Hub API 拉取**该仓库全部标签**（v9.4-G / v9.5-G / latest …），逐一
-4. 从 Docker Hub 拉取每个标签，re-tag 后推送到 `ghcr.io/wuenci666/ysp-live` 与 `docker.cnb.cool/wuenciteam/ysp-live-docker`
+1. **检测（check job）**：只调用 Docker Hub 的 **Web API** 读取「标签 → digest」，生成指纹并与上次缓存的指纹比对。**一致则直接跳过后续所有步骤**——不拉取、不推送任何镜像
+2. 登录 ghcr（用 `GITHUB_TOKEN`，自带 `packages:write`）
+3. 登录 cnb（用 `CNB_TOKEN`）
+4. 从 Docker Hub API 拉取**该仓库全部标签**（v9.4-G / v9.5-G / latest …），逐一
+5. 从 Docker Hub 拉取每个标签，re-tag 后推送到 `ghcr.io/wuenci666/ysp-live` 与 `docker.cnb.cool/wuenciteam/ysp-live-docker`
+6. **落库（finalize job）**：仅当两个同步 job 都成功时，才把本次指纹写入缓存；失败则不写入，下个整点自动重试
 
 > 即「更新 Docker Hub 一次 → CNB 与 GitHub 全部版本自动同步」。
+
+### 无变化就跳过（已启用）
+
+每小时的检测**几乎零成本**：只走一次 Docker Hub Web API（不计入镜像拉取配额），指纹没变就立刻结束，不消耗任何镜像流量与 Actions 时长。
+
+- 想**强制同步**（忽略跳过）：Actions → `sync-from-dockerhub` → Run workflow → 勾选 **force**
+- 指纹缓存存放在 GitHub Actions Cache，7 天内无访问会自动清理；但因每小时都会访问，不会失效
+- 若某次同步失败，指纹不会写入缓存，下个整点会重新判定为「有变化」并重试
 
 ## 必须配置的 Secrets
 
