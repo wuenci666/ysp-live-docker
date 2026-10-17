@@ -5,7 +5,12 @@ name: sync-from-dockerhub
 #   1) 手动：Actions → sync-from-dockerhub → Run workflow
 #   2) 自动：Docker Hub webhook → repository_dispatch（见 SYNC.md）
 on:
+  # 1) 定时兜底：每 6 小时自动同步一次（无需任何外部配置）
+  schedule:
+    - cron: '17 */6 * * *'
+  # 2) 手动：Actions → sync-from-dockerhub → Run workflow
   workflow_dispatch:
+  # 3) 全自动即时：Docker Hub webhook → Cloudflare Worker → repository_dispatch
   repository_dispatch:
     types: [dockerhub-sync]
 
