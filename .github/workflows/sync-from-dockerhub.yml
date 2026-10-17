@@ -48,6 +48,12 @@ jobs:
             docker tag  "$SRC:$TAG" "$GHCR:$TAG"
             docker push "$GHCR:$TAG"
           done
+          # GitHub Packages 的横幅版本以最后推送的标签为准；
+          # 因此先把 latest 再推一次，最后把 v9.5-G 推一次，让页面横幅显示为 v9.5-G。
+          echo "==> [latest] re-push as the 'latest' pointer"
+          docker pull "$SRC:latest" && docker tag "$SRC:latest" "$GHCR:latest" && docker push "$GHCR:latest"
+          echo "==> [v9.5-G] re-push last so GitHub Packages banner shows v9.5-G"
+          docker pull "$SRC:v9.5-G" && docker tag "$SRC:v9.5-G" "$GHCR:v9.5-G" && docker push "$GHCR:v9.5-G"
           echo "✅ ghcr 镜像完成"
 
   # 第二阶段：把相同标签推送到 cnb（需要 CNB_TOKEN secret）
@@ -79,4 +85,9 @@ jobs:
             docker tag  "$SRC:$TAG" "$CNB:$TAG"
             docker push "$CNB:$TAG"
           done
+          # 与 ghcr 保持一致：latest 与 v9.5-G 最后推送，让横幅显示为 v9.5-G。
+          echo "==> [latest] re-push as the 'latest' pointer"
+          docker pull "$SRC:latest" && docker tag "$SRC:latest" "$CNB:latest" && docker push "$CNB:latest"
+          echo "==> [v9.5-G] re-push last so CNB banner shows v9.5-G"
+          docker pull "$SRC:v9.5-G" && docker tag "$SRC:v9.5-G" "$CNB:v9.5-G" && docker push "$CNB:v9.5-G"
           echo "✅ cnb 镜像完成"
