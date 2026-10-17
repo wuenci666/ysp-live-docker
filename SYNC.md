@@ -14,14 +14,16 @@
 `.github/workflows/sync-from-dockerhub.yml`
 
 触发方式：
-1. **手动**：GitHub → Actions → `sync-from-dockerhub` → **Run workflow**（可填 tag，默认 `latest`）
+1. **手动**：GitHub → Actions → `sync-from-dockerhub` → **Run workflow**
 2. **自动**：Docker Hub webhook → GitHub `repository_dispatch`
 
 工作流做的事情：
 1. 登录 ghcr（用 `GITHUB_TOKEN`，自带 `packages:write`）
 2. 登录 cnb（用 `CNB_TOKEN`）
-3. 从 Docker Hub 拉取镜像
-4. re-tag 后推送到 `ghcr.io/wuenci666/ysp-live` 与 `docker.cnb.cool/wuenciteam/ysp-live-docker`
+3. 从 Docker Hub API 拉取**该仓库全部标签**（v9.4-G / v9.5-G / latest …），逐一
+4. 从 Docker Hub 拉取每个标签，re-tag 后推送到 `ghcr.io/wuenci666/ysp-live` 与 `docker.cnb.cool/wuenciteam/ysp-live-docker`
+
+> 即「更新 Docker Hub 一次 → CNB 与 GitHub 全部版本自动同步」。
 
 ## 必须配置的 Secrets
 
