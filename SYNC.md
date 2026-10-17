@@ -14,7 +14,7 @@
 `.github/workflows/sync-from-dockerhub.yml`
 
 触发方式：
-1. **定时自动（已启用）**：每 6 小时自动同步一次，无需任何配置 —— 更新 Docker Hub 后最多 6 小时内会自动同步到 ghcr 与 CNB
+1. **定时自动（已启用）**：每小时自动检测并同步一次，无需任何配置 —— 更新 Docker Hub 后最多 1 小时内会自动同步到 ghcr 与 CNB
 2. **手动**：GitHub → Actions → `sync-from-dockerhub` → **Run workflow**（想立刻同步就点一次）
 3. **即时自动（可选）**：Docker Hub webhook → GitHub `repository_dispatch`，推送后几分钟内触发，需部署 Cloudflare Worker（见下文）
 
