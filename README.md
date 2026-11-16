@@ -113,9 +113,41 @@ docker compose up -d
 | 健康检查 | `http://localhost:8767/health` |
 | 诊断日志 | `http://localhost:8767/diag` |
 
+### 📱 APTV（TestFlight 版）
+
+1. 进入「配置 → 服务 → 添加服务」。服务名称填「央视频直播」，服务类型选「Python」。
+2. 代码来源选「远程链接」，填写 Python v9.8 脚本地址（`ysp-live-v9.8.py`）。
+3. 点击「加载代码 → 添加服务」，启用服务。已有服务若支持编辑远程链接，可替换地址后重新加载。
+4. 添加订阅：`http://127.0.0.1:8767/all.m3u`。
+
+### 📱 nanoTV（TestFlight 版）
+
+1. 进入「设置 → 通用 → 实验」，打开「JS 订阅」。
+2. 进入「订阅 → 添加 → JavaScript」。
+3. 填入 JavaScript 2.0.16 脚本地址（`ysp-service_2.0.16.js`）。
+4. 点击「读取脚本」→「批准并安装」，然后启用服务。
+
+### 📱 mytv-android（最新预览版）
+
+1. 在设置或网页面板搜索「Python运行环境」，也可从「设置 → 投屏与扩展 → 组件下载」安装。选 JavaScript 则无需安装 Python 组件。
+2. 搜索「脚本服务」后点「添加服务」，或进入「设置 → 投屏与扩展 → 脚本服务 → 添加服务」。名称填「央视频直播」，代码来源选「远程链接」。
+3. 选 Python 填 v9.8 脚本（`ysp-live-v9.8.py`）；选 JavaScript 填 2.0.16 脚本（`ysp-service_2.0.16.js`）。勾选「启用」，点击「确定」。
+4. 长按刚添加的服务，选「添加为订阅源」。
+
+> 💡 脚本随版本发布包提供（`ysp-live-v9.8.py` / `ysp-engine.js`），`ysp-service_2.0.16.js` 见作者首发地址。
+
+### 🚀 代理工具分流
+
+1. **Shadowrocket**：「配置 → 模块 → ＋」，粘贴分流模块地址（`ysp.module`）。
+2. **Surge / Loon / Clash 等**：通用规则集（`ysp.list`）。
+
+### ⚠️ 使用提示
+
+1. 建议在稳定网络下使用。真 4K 流量约 **15 GB/小时**，1080p 约 **5 GB/小时**，实际随码率浮动。
+2. 健康检查：`http://localhost:8767/health`；诊断日志：`http://localhost:8767/diag`。
+3. 服务运行在 NAS 或其他电脑时，把 `localhost` 换成该设备 IP。
+
 > 💡 局域网其他设备播放时，若 m3u 内频道地址为绝对 `localhost`，需改用支持「按订阅主机补全相对地址」的播放器，或手动把 m3u 中的 `localhost` 替换为运行容器的电脑局域网 IP。
->
-> 📱 **mytv-android**（Android TV / 手机）：v9.8 起内置接入指南，订阅地址填 `http://<局域网IP>:8767/all.m3u` 即可。
 
 ---
 
