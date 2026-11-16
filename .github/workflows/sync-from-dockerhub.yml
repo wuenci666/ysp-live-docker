@@ -74,6 +74,13 @@ jobs:
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout（读取 .current-version 作为当前旗舰版）
+        uses: actions/checkout@v4
+
+      - name: 读取当前版本号
+        id: cur
+        run: echo "ver=$(cat .current-version | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
       - name: Login Docker Hub (避免 GitHub runner 拉取限流；缺 token 时回退匿名拉取)
         continue-on-error: true
         uses: docker/login-action@v3
@@ -100,11 +107,12 @@ jobs:
             docker push "$GHCR:$TAG"
           done
           # GitHub Packages 的横幅版本以最后推送的标签为准；
-          # 因此先把 latest 再推一次，最后把 v9.5-G 推一次，让页面横幅显示为 v9.5-G。
+          # 先把 latest 再推一次，最后推 .current-version 记录的当前版本，让横幅显示为最新旗舰版。
+          CUR="${{ steps.cur.outputs.ver }}"
           echo "==> [latest] re-push as the 'latest' pointer"
           docker pull "$SRC:latest" && docker tag "$SRC:latest" "$GHCR:latest" && docker push "$GHCR:latest"
-          echo "==> [v9.5-G] re-push last so GitHub Packages banner shows v9.5-G"
-          docker pull "$SRC:v9.5-G" && docker tag "$SRC:v9.5-G" "$GHCR:v9.5-G" && docker push "$GHCR:v9.5-G"
+          echo "==> [$CUR] re-push last so GitHub Packages banner shows $CUR"
+          docker pull "$SRC:$CUR" && docker tag "$SRC:$CUR" "$GHCR:$CUR" && docker push "$GHCR:$CUR"
           echo "✅ ghcr 镜像完成"
 
   # 第二阶段：把相同标签推送到 cnb（需要 CNB_TOKEN secret）
@@ -113,6 +121,13 @@ jobs:
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout（读取 .current-version 作为当前旗舰版）
+        uses: actions/checkout@v4
+
+      - name: 读取当前版本号
+        id: cur
+        run: echo "ver=$(cat .current-version | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
       - name: Login Docker Hub
         continue-on-error: true
         uses: docker/login-action@v3
@@ -137,11 +152,12 @@ jobs:
             docker tag  "$SRC:$TAG" "$CNB:$TAG"
             docker push "$CNB:$TAG"
           done
-          # 与 ghcr 保持一致：latest 与 v9.5-G 最后推送，让横幅显示为 v9.5-G。
+          # 与 ghcr 保持一致：latest 与当前旗舰版最后推送，让横幅显示为最新版。
+          CUR="${{ steps.cur.outputs.ver }}"
           echo "==> [latest] re-push as the 'latest' pointer"
           docker pull "$SRC:latest" && docker tag "$SRC:latest" "$CNB:latest" && docker push "$CNB:latest"
-          echo "==> [v9.5-G] re-push last so CNB banner shows v9.5-G"
-          docker pull "$SRC:v9.5-G" && docker tag "$SRC:v9.5-G" "$CNB:v9.5-G" && docker push "$CNB:v9.5-G"
+          echo "==> [$CUR] re-push last so CNB banner shows $CUR"
+          docker pull "$SRC:$CUR" && docker tag "$SRC:$CUR" "$CNB:$CUR" && docker push "$CNB:$CUR"
           echo "✅ cnb 镜像完成"
 
   # 第三阶段：仅当两个同步 job 都成功时，才把本次指纹写入缓存供下次比对。
