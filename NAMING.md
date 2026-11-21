@@ -4,7 +4,7 @@
 > 所有 YSP 央视频直播 Docker 系列的 **镜像仓库名、镜像标签、容器名、Compose project 名**
 > 都必须严格遵循本规范。新增任何版本时，直接套用本文公式即可，避免格式/规则异常。
 >
-> 适用范围：v3.0 ~ v11.2-G 全系列（含各 `-G` 卫视完整版）及今后发布的所有新版本。
+> 适用范围：v3.0 ~ v11.3-G 全系列（含各 `-G` 卫视完整版）及今后发布的所有新版本。
 
 ---
 
@@ -19,7 +19,7 @@ convention:
   repo_remote: "wuenci514/ysp-live"           # = {hub_user}/ysp-live
   version_pattern: "vMAJOR.MINOR[-G]"         # 例：v9.4、v9.4-G
   tag_pattern: "vMAJOR.MINOR[-G] | latest"    # 镜像标签 = 版本号；latest 为浮动标签
-  latest_points_to: "v11.2-G"                  # 当前最新稳定版（发布新版本时更新此值）
+  latest_points_to: "v11.3-G"                  # 当前最新稳定版（发布新版本时更新此值）
   container_name: "ysp-live-<slug>"           # slug 规则见下
   compose_project_name: "ysp-live-<slug>"     # 必须等于 container_name（显式声明 name:）
   slug_rule: "v + version.without('v','.','-')"   # 去前缀 v、去点、去连字符后连写
@@ -29,6 +29,7 @@ convention:
 
 | 输入版本 | slug | 本地镜像 | 远程镜像 | 容器名 |
 |---------|------|---------|---------|--------|
+| `v11.3-G` | `v113g` | `ysp-live:v11.3-G` | `wuenci514/ysp-live:v11.3-G` | `ysp-live-v113g` |
 | `v11.2-G` | `v112g` | `ysp-live:v11.2-G` | `wuenci514/ysp-live:v11.2-G` | `ysp-live-v112g` |
 | `v10.0-G` | `v100g` | `ysp-live:v10.0-G` | `wuenci514/ysp-live:v10.0-G` | `ysp-live-v100g` |
 | `v9.9.3-G` | `v993g` | `ysp-live:v9.9.3-G` | `wuenci514/ysp-live:v9.9.3-G` | `ysp-live-v993g` |
@@ -62,7 +63,8 @@ convention:
 | v9.4-G | v94g | `ysp-live:v9.4-G` | `wuenci514/ysp-live:v9.4-G` | `ysp-live-v94g` |
 | v9.5-G | v95g | `ysp-live:v9.5-G` | `wuenci514/ysp-live:v9.5-G` | `ysp-live-v95g` |
 | v9.6-G | v96g | `ysp-live:v9.6-G` | `wuenci514/ysp-live:v9.6-G` | `ysp-live-v96g` |
-| **v11.2-G** ⭐ | **v112g** | `ysp-live:v11.2-G` | `wuenci514/ysp-live:v11.2-G` | `ysp-live-v112g` |
+| **v11.3-G** ⭐ | **v113g** | `ysp-live:v11.3-G` | `wuenci514/ysp-live:v11.3-G` | `ysp-live-v113g` |
+| v11.2-G | v112g | `ysp-live:v11.2-G` | `wuenci514/ysp-live:v11.2-G` | `ysp-live-v112g` |
 | v10.0-G | v100g | `ysp-live:v10.0-G` | `wuenci514/ysp-live:v10.0-G` | `ysp-live-v100g` |
 | v9.9.3-G | v993g | `ysp-live:v9.9.3-G` | `wuenci514/ysp-live:v9.9.3-G` | `ysp-live-v993g` |
 | v9.9-G | v99g | `ysp-live:v9.9-G` | `wuenci514/ysp-live:v9.9-G` | `ysp-live-v99g` |
@@ -72,7 +74,7 @@ convention:
 | v8.1-G | v81g | `ysp-live:v8.1-G` | `wuenci514/ysp-live:v8.1-G` | `ysp-live-v81g` |
 | v9.0-G | v90g | `ysp-live:v9.0-G` | `wuenci514/ysp-live:v9.0-G` | `ysp-live-v90g` |
 
-> `latest` 浮动标签同时存在于本地与远程，始终指向 `latest_points_to`（当前 `v11.2-G`），
+> `latest` 浮动标签同时存在于本地与远程，始终指向 `latest_points_to`（当前 `v11.3-G`），
 > 其 digest 必须与该版本标签完全一致。
 
 ---
@@ -115,8 +117,8 @@ convention:
 
 ```bash
 # ===== 变量（按新版本填写）=====
-VER="vX.Y-G"          # 版本号，例 v11.2-G
-SLUG="vXYg"           # slug，例 v112g（去 v/./- 连写）
+VER="vX.Y-G"          # 版本号，例 v11.3-G
+SLUG="vXYg"           # slug，例 v113g（去 v/./- 连写）
 HUB="wuenci514/ysp-live"
 
 # 1. 构建（在对应版本目录，compose 已含 name:/container_name:/image:）
@@ -184,7 +186,7 @@ services:
 - 早期容器 `ysp-live-v3.0` 等**保留了点号**（非 slug 形式）。新规要求去点，但因历史容器已存在，
   **仅对新版本严格执行 slug**；重命名旧容器非必须（播放器订阅地址不受影响）。
 - Docker Hub 网页上残留的旧 `9.4` tag（非 `v9.4-G`）需手动在 Hub 仓库 Tags 页删除，才能真正干净。
-- 本规范自 **v9.4-G**（容器 `ysp-live-v94g`）起作为权威来源执行；后续版本一律照此生成。当前 `latest` 指向 **v11.2-G**（容器 `ysp-live-v112g`）。
+- 本规范自 **v9.4-G**（容器 `ysp-live-v94g`）起作为权威来源执行；后续版本一律照此生成。当前 `latest` 指向 **v11.3-G**（容器 `ysp-live-v113g`）。
 
 ---
 
